@@ -163,6 +163,21 @@ async def mash_button(controller_state, button, interval):
     # await future to trigger exceptions in case something went wrong
     await user_input
 
+async def stars_button(controller_state):
+    await controller_state.connect()
+    user_input = asyncio.ensure_future(
+        ainput(prompt=f'Farming Stars! Pressing A and Up every 1 second... Press <enter> to stop.')
+    )
+    # push a button repeatedly until user input
+    while not user_input.done():
+        stick = controller_state.r_stick_state
+        stick.set_up()        
+        await asyncio.sleep(0.5)
+        await button_push(controller_state, "a")
+        stick.set_center()
+        await asyncio.sleep(0.5)
+    await user_input
+
 
 def _register_commands_with_controller_state(controller_state, cli):
     """
@@ -194,6 +209,18 @@ def _register_commands_with_controller_state(controller_state, cli):
         await mash_button(controller_state, button, interval)
 
     cli.add_command(mash.__name__, mash)
+    
+    # Pray on Stars and reset view 
+    async def stars():
+        """
+        stars - Pray on stars and keep camera point at sky
+        
+        Usage:
+            stars
+        """
+        await stars_button(controller_state)
+        
+    cli.add_command(stars.__name__, stars)
 
     # Hold a button command
     async def hold(*args):
